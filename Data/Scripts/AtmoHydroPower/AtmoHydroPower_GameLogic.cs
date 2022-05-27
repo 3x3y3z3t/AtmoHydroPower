@@ -3,6 +3,7 @@ using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
+using System.Collections.Generic;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -11,61 +12,100 @@ using VRage.Utils;
 
 namespace AtmoHydroPower
 {
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), false,
-        new string[]
-        {
-            "AtmoHydro_LargeBlockLargeAtmosphericThrust", "AtmoHydro_LargeBlockSmallAtmosphericThrust",
-            "AtmoHydro_SmallBlockLargeAtmosphericThrust", "AtmoHydro_SmallBlockSmallAtmosphericThrust",
-            "AtmoHydro_LargeBlockLargeAtmosphericThrustSciFi", "AtmoHydro_LargeBlockSmallAtmosphericThrustSciFi",
-            "AtmoHydro_SmallBlockLargeAtmosphericThrustSciFi", "AtmoHydro_SmallBlockSmallAtmosphericThrustSciFi",
-            "AtmosphericThrusterLarge_SciFiForced", "AtmosphericThrusterSmall_SciFiForced",
-            "AtmosphericThrusterSmall_SciFiForced123"
-        })]
+    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), false, new string[] {
+        /* Vanilla Replaced */
+        "LargeBlockLargeAtmosphericThrust", "LargeBlockSmallAtmosphericThrust",
+        "SmallBlockLargeAtmosphericThrust", "SmallBlockSmallAtmosphericThrust",
+        "LargeBlockLargeAtmosphericThrustSciFi", "LargeBlockSmallAtmosphericThrustSciFi",
+        "SmallBlockLargeAtmosphericThrustSciFi", "SmallBlockSmallAtmosphericThrustSciFi",
+
+        /* Standalone */
+        "AtmoHydro_LargeBlockLargeAtmosphericThrust", "AtmoHydro_LargeBlockSmallAtmosphericThrust",
+        "AtmoHydro_SmallBlockLargeAtmosphericThrust", "AtmoHydro_SmallBlockSmallAtmosphericThrust",
+        "AtmoHydro_LargeBlockLargeAtmosphericThrustSciFi", "AtmoHydro_LargeBlockSmallAtmosphericThrustSciFi",
+        "AtmoHydro_SmallBlockLargeAtmosphericThrustSciFi", "AtmoHydro_SmallBlockSmallAtmosphericThrustSciFi",
+
+        /* Afterburners */
+        "AtmosphericThrusterLarge_SciFiForced", "AtmosphericThrusterSmall_SciFiForced",
+        "AtmosphericThrusterSmall_SciFiForced123"
+    })]
     class AtmoHydroPower_GameLogic : MyGameLogicComponent
     {
+        private static readonly List<string> s_VanillaSubtypeIds = new List<string>()
+        {
+            "LargeBlockLargeAtmosphericThrust",
+            "LargeBlockSmallAtmosphericThrust",
+            "SmallBlockLargeAtmosphericThrust",
+            "SmallBlockSmallAtmosphericThrust",
+            "LargeBlockLargeAtmosphericThrustSciFi",
+            "LargeBlockSmallAtmosphericThrustSciFi",
+            "SmallBlockLargeAtmosphericThrustSciFi",
+            "SmallBlockSmallAtmosphericThrustSciFi",
+        };
+
+        private static readonly List<string> s_ModSubtypeIds = new List<string>()
+        {
+            "AtmoHydro_LargeBlockLargeAtmosphericThrust",
+            "AtmoHydro_LargeBlockSmallAtmosphericThrust",
+            "AtmoHydro_SmallBlockLargeAtmosphericThrust",
+            "AtmoHydro_SmallBlockSmallAtmosphericThrust",
+            "AtmoHydro_LargeBlockLargeAtmosphericThrustSciFi",
+            "AtmoHydro_LargeBlockSmallAtmosphericThrustSciFi",
+            "AtmoHydro_SmallBlockLargeAtmosphericThrustSciFi",
+            "AtmoHydro_SmallBlockSmallAtmosphericThrustSciFi",
+
+            "AtmosphericThrusterLarge_SciFiForced",
+            "AtmosphericThrusterSmall_SciFiForced",
+            "AtmosphericThrusterSmall_SciFiForced123"
+        };
+
         private IMyThrust m_Block = null; // storing the entity as a block reference to avoid re-casting it every time it's needed, this is the lowest type a block entity can be;
 
         private MyResourceSourceComponent m_PowerSource = null;
         private MyResourceSinkComponent m_PowerSink = null;
 
+
         public override void Init(MyObjectBuilder_EntityBase _objectBuilder)
         {
-            Logger.Log("Initializing..");
-            m_Block = (IMyThrust)Entity;
-            if (m_Block == null)
+            if (Config.s_IsReplaceModPresent == Config.s_IsStandaloneModPresent)
+                return;
+
+            Logger.Log("Initializing GameLogic..");
+            if (!(Entity is IMyThrust))
             {
                 // entity is not thruster;
-                Logger.Log("Entity is " + Entity.GetObjectBuilder().SubtypeId);
+                Logger.Log("  Entity" + Entity.EntityId + " is " + Entity.GetObjectBuilder().SubtypeId);
                 return;
             }
 
-
-            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME;
-
-            Logger.Log("GameLogic attached");
-            Logger.Log("block is " + m_Block.BlockDefinition.SubtypeId);
-
-            m_PowerSink = Entity.Components.Get<MyResourceSinkComponent>();
-            if (m_PowerSink == null)
+            if (Config.s_IsReplaceModPresent)
             {
-                Logger.Log("sink is null");
+                // TODO: do nothing;
+            }
+            else if (Config.s_IsStandaloneModPresent)
+            {
+                IMyCubeBlock block = Entity as IMyCubeBlock;
+                if (s_VanillaSubtypeIds.Contains(block.BlockDefinition.SubtypeId))
+                {
+                    Logger.Log("  Vanilla block " + block.EntityId + " (" + block.BlockDefinition.SubtypeId + ") will be ignored");
+                    NeedsUpdate = MyEntityUpdateEnum.NONE;
+                    return;
+                }
+            }
+
+            m_Block = (IMyThrust)Entity;
+            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME;
+            Logger.Log("  Block " + m_Block.EntityId + " is " + m_Block.BlockDefinition.SubtypeId);
+            
+            float maxPowerCost = 0.0f;
+            if (m_Block is MyThrust)
+            {
+                maxPowerCost = ((MyThrust)m_Block).BlockDefinition.MaxPowerConsumption;
+                Logger.Log("  Max Power Cost = " + maxPowerCost);
             }
             else
-            {
-                float input = m_PowerSink.MaxRequiredInputByType(MyResourceDistributorComponent.ElectricityId);
-                Logger.Log("Max Input (electric) = " + input);
-            }
-
-            float maxPowerCost = 0.0f;
-            MyThrust block = m_Block as MyThrust;
-            if (block == null)
             {
                 Logger.Log("  Block is not MyThrust (this should not happens)");
-            }
-            else
-            {
-                maxPowerCost = block.BlockDefinition.MaxPowerConsumption;
-                Logger.Log("  Max Power Cost = " + maxPowerCost);
             }
             
             m_PowerSource = new MyResourceSourceComponent();
@@ -76,14 +116,13 @@ namespace AtmoHydroPower
                 ProductionToCapacityMultiplier = 1.0f,
                 ResourceTypeId = MyResourceDistributorComponent.ElectricityId
             });
+            Logger.Log("  Defined Output = " + m_PowerSource.DefinedOutputByType(MyResourceDistributorComponent.ElectricityId));
 
             m_Block.Components.Add(typeof(MyResourceSourceComponent), m_PowerSource);
-
-
-            Logger.Log("Defined Output = " + m_PowerSource.DefinedOutputByType(MyResourceDistributorComponent.ElectricityId));
-
-
+            
             m_Block.IsWorkingChanged += M_Block_IsWorkingChanged;
+
+            Logger.Log("  GameLogic attached");
         }
 
         private void M_Block_IsWorkingChanged(IMyCubeBlock _obj)
@@ -99,13 +138,13 @@ namespace AtmoHydroPower
             
             if (block.IsWorking)
             {
-                Logger.Log("Block is enabled");
+                Logger.Log("Block " + m_Block.EntityId + " is enabled");
                 m_PowerSource.Enabled = true;
                 CalculatePowerOutput();
             }
             else
             {
-                Logger.Log("Block is disabled");
+                Logger.Log("Block " + m_Block.EntityId + " is disabled");
                 m_PowerSource.Enabled = false;
                 Logger.Log("Current Output = " + m_PowerSource.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId));
             }
@@ -131,12 +170,14 @@ namespace AtmoHydroPower
 
         public override void MarkForClose()
         {
-            // called when entity is about to be removed for whatever reason (block destroyed, entity deleted, ship despawn because of sync range, etc)
+            if (m_Block == null)
+                return;
 
+            // called when entity is about to be removed for whatever reason (block destroyed, entity deleted, ship despawn because of sync range, etc)
             m_Block.IsWorkingChanged -= M_Block_IsWorkingChanged;
 
 
-
+            Logger.Log("Block " + m_Block.EntityId + " is marked for close");
         }
 
         public override void UpdateBeforeSimulation()
@@ -148,7 +189,7 @@ namespace AtmoHydroPower
         {
             if (!m_Block.IsWorking)
             {
-                Logger.Log("Block is not working");
+                Logger.Log("Block " + m_Block.EntityId + " is not working");
                 return;
             }
 

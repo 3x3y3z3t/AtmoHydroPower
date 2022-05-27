@@ -260,15 +260,7 @@ paket-files/
 __pycache__/
 *.pyc
 
-# SE Models, Textures and sbcs
-Models/
-Textures/
-*.sbc
-
-# Mod specific
-description.txt
-thumb.png
-metadata.mod
-
+*.psd
 *.csproj
 *.sln
+Properties/

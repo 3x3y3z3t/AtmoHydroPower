@@ -11,5 +11,12 @@ namespace AtmoHydroPower
     {
         public const float MAX_POWER_OUTPUT = 1.0f;
         public const float POWER_OUTPUT_MOD = 10.0f;
+        
+    }
+
+    public class Config
+    {
+        public static bool s_IsReplaceModPresent = false;
+        public static bool s_IsStandaloneModPresent = false;
     }
 }
