@@ -10,7 +10,10 @@ namespace AtmoHydroPower
     public class Constants
     {
         public const float MAX_POWER_OUTPUT = 1.0f;
-        public const float POWER_OUTPUT_MOD = 10.0f;
+        public const float POWER_OUTPUT_MOD = 1.0f;
+
+        public const int SPINUP_TIME_TICKS = (int)(60.0f * 1.0f);
+        public const int ROLLBACK_TIME_TICKS = (int)(60.0f * 5.0f);
         
     }
 

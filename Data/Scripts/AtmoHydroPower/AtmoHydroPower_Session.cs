@@ -12,13 +12,16 @@ namespace AtmoHydroPower
         public override void LoadData()
         {
             Logger.Init();
-        }
+            Logger.LogLevel = 3;
 
-        public override void BeforeStart()
-        {
-            Logger.Log("Session Comp BeforeStart()");
+            Logger.Log("Session Comp LoadData()..");
+            if (MyAPIGateway.Session == null)
+            {
+                Logger.Log("  Session is null");
+                return;
+            }
 
-            List<MyObjectBuilder_Checkpoint.ModItem> modList = MyAPIGateway.Session?.Mods;
+            List<MyObjectBuilder_Checkpoint.ModItem> modList = MyAPIGateway.Session.Mods;
             if (modList == null)
             {
                 Logger.Log("  Mod list is null");
@@ -47,8 +50,10 @@ namespace AtmoHydroPower
                 Logger.Log("  Both Atmo Hydro thruster and its standalone mod is present, which may cause conflict");
                 Logger.Log("    > This mod will be disabled");
             }
+            
+            Logger.Log("  LoadData done.");
         }
-
+        
         protected override void UnloadData()
         {
             Logger.Close();

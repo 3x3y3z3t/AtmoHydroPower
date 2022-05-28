@@ -8,4 +8,4 @@ This is the repository for "the script part" for Roshag, DEeM0NX's mod [Atmo Thr
 - What is balancing? (for now)
 
 # Version
-Script version v1.1.1
+Script version v1.2.1
