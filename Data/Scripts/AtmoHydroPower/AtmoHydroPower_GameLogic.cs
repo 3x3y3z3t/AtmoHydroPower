@@ -3,7 +3,6 @@ using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
-using System.Collections.Generic;
 using VRage;
 using VRage.Game;
 using VRage.Game.Components;
@@ -48,7 +47,6 @@ namespace AtmoHydroPower
         private ThrusterSpinState m_SpinState = ThrusterSpinState.Off;
         private int m_RemainingSpinTicks = 0;
         private int m_SkipTicks = 0;
-        private bool m_FirstUpdate = true;
 
         private IMyThrust m_Block = null;
         private IMyCubeGrid m_Grid = null;
@@ -96,6 +94,7 @@ namespace AtmoHydroPower
             Logger.Log("  CubeSize: " + cubeSize);
             Logger.Log("  CubeGrid.EntityId: " + m_Grid.EntityId);
 
+#if false
             if (Constants.s_PowerInputs.ContainsKey(blockSubtypeId))
             {
                 m_PowerInput = Constants.s_PowerInputs[blockSubtypeId];
@@ -106,18 +105,24 @@ namespace AtmoHydroPower
             {
                 Logger.Log("  Couldn't find power input rating for block " + block.EntityId + " (" + blockSubtypeId + ")");
             }
+#else
+            if (m_Block is MyThrust)
+            {
+                float fuelCost = ((MyThrust)m_Block).BlockDefinition.MaxPowerConsumption;
+                if (cubeSize == MyCubeSize.Large)
+                    m_PowerOutput = fuelCost * Constants.POWER_DENSITY_LARGE;
+                else
+                    m_PowerOutput = fuelCost * Constants.POWER_DENSITY_SMALL;
+                m_PowerInput = m_PowerOutput * Constants.POWER_INPUT_MOD;
+                Logger.Log("  Fuel Cost = " + fuelCost);
+                Logger.Log("  PowerRating: In:" + m_PowerInput + ", Out:" + m_PowerOutput);
+            }
+            else
+            {
+                Logger.Log("  Block is not MyThrust (this should not happens)");
+            }
+#endif
 
-            //float maxPowerCost = 0.0f;
-            //if (m_Block is MyThrust)
-            //{
-            //    maxPowerCost = ((MyThrust)m_Block).BlockDefinition.MaxPowerConsumption;
-            //    Logger.Log("  Max Power Cost = " + maxPowerCost);
-            //}
-            //else
-            //{
-            //    Logger.Log("  Block is not MyThrust (this should not happens)");
-            //}
-            
             m_PowerSource = new MyResourceSourceComponent();
             m_PowerSource.Init(MyStringHash.Get("Reactors"), new MyResourceSourceInfo()
             {
@@ -236,12 +241,12 @@ namespace AtmoHydroPower
             }
             if (m_PowerSource != null)
             {
-
                 float powerOut = m_PowerSource.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId);
                 float powerPercent = powerOut / m_PowerOutput;
                 _sb.AppendFormat("  Output: {0} ({1:0.##}%)\n", Utils.FormatPowerFromMegaWatt(powerOut), powerPercent * 100.0f);
             }
 
+            _sb.Append("***Note*** Status is kinda broken. Click Terminal buttons to properly \"refresh\" detail status.\n");
 
 
         }
@@ -364,7 +369,7 @@ namespace AtmoHydroPower
                 if (state == MyResourceStateEnum.Ok)
                     m_Block.ThrustMultiplier = 1.0f;
                 else
-                    m_Block.ThrustMultiplier = 0.25f;
+                    m_Block.ThrustMultiplier = Constants.THRUST_POWER_MOD_WHEN_LOW_POWER;
                 Logger.Log("  Thruster " + m_Block.EntityId + " is Idle", 5);
             }
             else if (m_SpinState == ThrusterSpinState.SpinningUp)
@@ -441,7 +446,7 @@ namespace AtmoHydroPower
             float powerIn = 0.0f;
             if (m_SpinState == ThrusterSpinState.SpinningUp)
             {
-                powerIn = m_PowerInput * Constants.POWER_INPUT_MOD;
+                powerIn = m_PowerInput * Constants.POWER_INPUT_KICKSTART;
             }
             else if (m_SpinState == ThrusterSpinState.Idle)
             {
@@ -457,15 +462,19 @@ namespace AtmoHydroPower
             powerIn = m_PowerSink.CurrentInputByType(MyResourceDistributorComponent.ElectricityId);
             float powerPercent = powerIn / m_PowerInput;
 
-            Logger.Log(string.Format("    Power In: {0:0.##}/{1:0.##} ({2:0.##}%)", powerIn, m_PowerInput, powerPercent * 100.0f, 4));
+            Logger.Log(string.Format("    Power In: {0:0.##}/{1:0.##} ({2:0.##}%)", powerIn * 1000.0f, m_PowerInput * 1000.0f, powerPercent * 100.0f), 4);
 
         }
 
         private void CalculatePowerOutput()
         {
-            const float coeff = 2.0f / 2.1f;
             float thrustPercent = m_Block.CurrentThrust / m_Block.MaxThrust;
-            float powerOut = (thrustPercent + 1.1f) * m_PowerOutput * coeff;
+#if false
+            const float coeff = 1.0f / 1.05f;
+            float powerOut = (thrustPercent + (Constants.POWER_OUTPUT_MOD - 0.9f)) * m_PowerOutput * coeff;
+#else
+            float powerOut = m_PowerOutput * VRageMath.MathHelper.Lerp(Constants.POWER_OUTPUT_IDLE, Constants.POWER_OUTPUT_MAX, thrustPercent);
+#endif
 
             //if (m_SpinState == ThrusterSpinState.Idle)
             //    powerOut *= 7.0f;
@@ -476,8 +485,8 @@ namespace AtmoHydroPower
             powerOut = m_PowerSource.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId);
             float powerPercent = powerOut / m_PowerOutput;
 
-            Logger.Log(string.Format("    Power Out: {0:0.##}/{1:0.##} ({2:0.##}%)", powerOut, m_PowerOutput, powerPercent * 100.0f), 4);
-            Logger.Log(string.Format("    Thrust {0:0.##}/{1:0.##} ({2:0.##}%)", m_Block.CurrentThrust, m_Block.MaxThrust, thrustPercent * 100.0f), 4);
+            Logger.Log(string.Format("    Power Out: {0:0.##}/{1:0.##} ({2:0.##}%)", powerOut * 1000.0f, m_PowerOutput * 1000.0f, powerPercent * 100.0f), 3);
+            Logger.Log(string.Format("    Thrust {0:0.##}/{1:0.##} ({2:0.##}%)", m_Block.CurrentThrust, m_Block.MaxThrust, thrustPercent * 100.0f), 3);
         }
     }
 }

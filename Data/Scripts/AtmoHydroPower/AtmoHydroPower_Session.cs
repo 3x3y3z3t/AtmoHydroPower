@@ -2,11 +2,9 @@
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
 using Sandbox.ModAPI;
-using System;
 using System.Collections.Generic;
 using VRage.Game;
 using VRage.Game.Components;
-using VRage.ObjectBuilders;
 
 namespace AtmoHydroPower
 {

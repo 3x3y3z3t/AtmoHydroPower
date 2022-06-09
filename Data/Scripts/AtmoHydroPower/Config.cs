@@ -1,9 +1,6 @@
 ﻿// ;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AtmoHydroPower
 {
@@ -12,9 +9,24 @@ namespace AtmoHydroPower
         public const int SPINUP_TIME_TICKS = (int)(60.0f * SPINUP_TIME);
         public const int ROLLBACK_TIME_TICKS = (int)(60.0f * ROLLBACK_TIME);
 
-        public const float POWER_OUTPUT_MOD = 2.0f;
-        public const float POWER_INPUT_MOD = 2.0f;
+        /* Power Density is taken from vanilla Hydrogen Engine.
+         *      Large block: 500L/5MW
+         *      Small block: 50L/500kW
+         * Basically 0.01MW/1L
+         */
+        public const float POWER_DENSITY_LARGE = 0.01f;
+        public const float POWER_DENSITY_SMALL = 0.01f;
 
+        public const float POWER_INPUT_MOD = 0.5f;
+        public const float POWER_INPUT_KICKSTART = 10.0f;
+
+        public const float POWER_OUTPUT_IDLE = 1.05f;
+        public const float POWER_OUTPUT_MAX = 2.5f;
+
+
+        public const float THRUST_POWER_MOD_WHEN_LOW_POWER = 0.5f;
+
+#if false
         public const float POWER_IN_SMALLGRID_SMALLBLOCK = 1.0f;
         public const float POWER_IN_SMALLGRID_LARGEBLOCK = 1.0f;
         public const float POWER_IN_SMALLGRID_AFTERBURNER = 1.0f;
@@ -50,6 +62,7 @@ namespace AtmoHydroPower
             { "AtmosphericThrusterSmall_SciFiForced", POWER_IN_SMALLGRID_AFTERBURNER },
             { "AtmosphericThrusterSmall_SciFiForced123", POWER_IN_SMALLGRID_AFTERBURNER }
         };
+#endif
 
         public static readonly List<string> s_VanillaSubtypeIds = new List<string>()
         {

@@ -1,5 +1,4 @@
 ﻿// ;
-using ExShared;
 
 namespace AtmoHydroPower
 {

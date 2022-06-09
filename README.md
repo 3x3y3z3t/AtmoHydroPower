@@ -7,4 +7,4 @@ This is the repository for "the script part" for Roshag & DEeM0NX's mod [Atmo Th
 - What is balancing? (for now)
 
 # Version
-Script version v1.3.1-power-sink
+Script version v1.3.2
