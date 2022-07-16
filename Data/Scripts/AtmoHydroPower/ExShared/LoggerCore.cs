@@ -1,4 +1,15 @@
-﻿// ;
+﻿/*  ExShared/LoggerCore.cs
+ *  Version: v2.2 (2022.05.27)
+ * 
+ * Core Framework for Logger.
+ * This is the Core Logger used to write log file to a file in World Storage.
+ * File name is partly configurable.
+ * All log files have the same prefix "debug".
+ * 
+ *  Contributor
+ *      Arime-chan
+ */
+
 using Sandbox.ModAPI;
 using System;
 using System.IO;

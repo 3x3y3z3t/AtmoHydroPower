@@ -1,5 +1,4 @@
 ﻿// ;
-using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Entities;
 using Sandbox.Game.EntityComponents;
 using Sandbox.ModAPI;
@@ -21,24 +20,7 @@ namespace AtmoHydroPower
         RollingBack
     }
 
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), false, new string[] {
-        /* Vanilla Replaced */
-        "LargeBlockLargeAtmosphericThrust", "LargeBlockSmallAtmosphericThrust",
-        "SmallBlockLargeAtmosphericThrust", "SmallBlockSmallAtmosphericThrust",
-        "LargeBlockLargeAtmosphericThrustSciFi", "LargeBlockSmallAtmosphericThrustSciFi",
-        "SmallBlockLargeAtmosphericThrustSciFi", "SmallBlockSmallAtmosphericThrustSciFi",
-
-        /* Standalone */
-        "AtmoHydro_LargeBlockLargeAtmosphericThrust", "AtmoHydro_LargeBlockSmallAtmosphericThrust",
-        "AtmoHydro_SmallBlockLargeAtmosphericThrust", "AtmoHydro_SmallBlockSmallAtmosphericThrust",
-        "AtmoHydro_LargeBlockLargeAtmosphericThrustSciFi", "AtmoHydro_LargeBlockSmallAtmosphericThrustSciFi",
-        "AtmoHydro_SmallBlockLargeAtmosphericThrustSciFi", "AtmoHydro_SmallBlockSmallAtmosphericThrustSciFi",
-
-        /* Afterburners */
-        "AtmosphericThrusterLarge_SciFiForced", "AtmosphericThrusterSmall_SciFiForced",
-        "AtmosphericThrusterSmall_SciFiForced123"
-    })]
-    class AtmoHydroPower_GameLogic : MyGameLogicComponent
+    partial class AtmoHydroPower_GameLogic : MyGameLogicComponent
     {
         float m_PowerInput = 0.0f;
         float m_PowerOutput = 0.0f;
@@ -57,28 +39,11 @@ namespace AtmoHydroPower
         
         public override void Init(MyObjectBuilder_EntityBase _objectBuilder)
         {
-            if (Config.s_IsReplaceModPresent == Config.s_IsStandaloneModPresent)
-                return;
-
             Logger.Log("Initializing GameLogic for Entity " + Entity.EntityId + "..");
             if (!(Entity is IMyThrust))
             {
                 Logger.Log("  Entity " + Entity.EntityId + " is not thruster");
                 return;
-            }
-
-            IMyCubeBlock block = (IMyCubeBlock)Entity;
-            string blockSubtypeId = block.BlockDefinition.SubtypeId;
-            if (Config.s_IsReplaceModPresent)
-            { }
-            else if (Config.s_IsStandaloneModPresent)
-            {
-                if (Constants.s_VanillaSubtypeIds.Contains(blockSubtypeId))
-                {
-                    Logger.Log("  Vanilla block " + block.EntityId + " (" + blockSubtypeId + ") will be ignored");
-                    NeedsUpdate = MyEntityUpdateEnum.NONE;
-                    return;
-                }
             }
 
             m_Block = (IMyThrust)Entity;
@@ -88,24 +53,15 @@ namespace AtmoHydroPower
                 Logger.Log("  Block " + m_Block.EntityId + " doesn't have CubeGrid (this should not happens)");
                 return;
             }
+
+            string blockSubtypeId = m_Block.BlockDefinition.SubtypeId;
             MyCubeSize cubeSize = ((MyCubeBlock)m_Block).BlockDefinition.CubeSize;
-            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME | MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME;
             Logger.Log("  SubtypeId: " + blockSubtypeId);
             Logger.Log("  CubeSize: " + cubeSize);
             Logger.Log("  CubeGrid.EntityId: " + m_Grid.EntityId);
 
-#if false
-            if (Constants.s_PowerInputs.ContainsKey(blockSubtypeId))
-            {
-                m_PowerInput = Constants.s_PowerInputs[blockSubtypeId];
-                m_PowerOutput = m_PowerInput * Constants.POWER_OUTPUT_MOD;
-                Logger.Log("  PowerRating: In:" + m_PowerInput + ", Out:" + m_PowerOutput);
-            }
-            else
-            {
-                Logger.Log("  Couldn't find power input rating for block " + block.EntityId + " (" + blockSubtypeId + ")");
-            }
-#else
+            NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME | MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME;
+
             if (m_Block is MyThrust)
             {
                 float fuelCost = ((MyThrust)m_Block).BlockDefinition.MaxPowerConsumption;
@@ -113,7 +69,8 @@ namespace AtmoHydroPower
                     m_PowerOutput = fuelCost * Constants.POWER_DENSITY_LARGE;
                 else
                     m_PowerOutput = fuelCost * Constants.POWER_DENSITY_SMALL;
-                m_PowerInput = m_PowerOutput * Constants.POWER_INPUT_MOD;
+                m_PowerInput = m_PowerOutput * Constants.POWER_INPUT_MOD_IDLE;
+
                 Logger.Log("  Fuel Cost = " + fuelCost);
                 Logger.Log("  PowerRating: In:" + m_PowerInput + ", Out:" + m_PowerOutput);
             }
@@ -121,7 +78,6 @@ namespace AtmoHydroPower
             {
                 Logger.Log("  Block is not MyThrust (this should not happens)");
             }
-#endif
 
             m_PowerSource = new MyResourceSourceComponent();
             m_PowerSource.Init(MyStringHash.Get("Reactors"), new MyResourceSourceInfo()
@@ -451,7 +407,7 @@ namespace AtmoHydroPower
             float powerIn = 0.0f;
             if (m_SpinState == ThrusterSpinState.SpinningUp)
             {
-                powerIn = m_PowerInput * Constants.POWER_INPUT_KICKSTART;
+                powerIn = m_PowerInput * Constants.POWER_INPUT_MOD_KICKSTART;
             }
             else if (m_SpinState == ThrusterSpinState.Idle)
             {
@@ -474,12 +430,7 @@ namespace AtmoHydroPower
         private void CalculatePowerOutput()
         {
             float thrustPercent = m_Block.CurrentThrust / m_Block.MaxThrust;
-#if false
-            const float coeff = 1.0f / 1.05f;
-            float powerOut = (thrustPercent + (Constants.POWER_OUTPUT_MOD - 0.9f)) * m_PowerOutput * coeff;
-#else
             float powerOut = m_PowerOutput * VRageMath.MathHelper.Lerp(Constants.POWER_OUTPUT_IDLE, Constants.POWER_OUTPUT_MAX, thrustPercent);
-#endif
 
             //if (m_SpinState == ThrusterSpinState.Idle)
             //    powerOut *= 7.0f;
