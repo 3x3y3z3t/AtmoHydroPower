@@ -133,6 +133,14 @@ namespace AtmoHydroPower
             });
             m_Block.Components.Add(typeof(MyResourceSourceComponent), m_PowerSource);
 
+            m_PowerSink = new MyResourceSinkComponent();
+            m_PowerSink.Init(MyStringHash.Get("Thrust"), new MyResourceSinkInfo()
+            {
+                RequiredInputFunc = RequiredElectricInputFunc,
+                ResourceTypeId = MyResourceDistributorComponent.ElectricityId
+            });
+            //m_Block.Components.Add(typeof(MyResourceSinkComponent), m_PowerSink);
+
             m_Block.IsWorkingChanged += M_Block_IsWorkingChanged;
             m_Block.AppendingCustomInfo += M_Block_AppendingCustomInfo;
 
@@ -268,25 +276,6 @@ namespace AtmoHydroPower
         {
             Logger.Log(m_Block.EntityId + " > UpdateOnceBeforeFrame()..", 3);
 
-            m_ResDist = (MyResourceDistributorComponent)m_Grid.ResourceDistributor;
-            if (m_ResDist == null)
-            {
-                Logger.Log("  Grid resDist is null");
-            }
-            else
-            {
-                m_PowerSink = new MyResourceSinkComponent();
-                m_PowerSink.Init(MyStringHash.Get("Thrust"), new MyResourceSinkInfo()
-                {
-                    RequiredInputFunc = RequiredElectricInputFunc,
-                    ResourceTypeId = MyResourceDistributorComponent.ElectricityId
-                });
-                //m_Block.Components.Add(typeof(MyResourceSinkComponent), m_PowerSink);
-
-                m_ResDist.AddSink(m_PowerSink);
-                Logger.Log("  Added electricity sink");
-            }
-
             if (m_Block.IsWorking)
             {
                 Logger.Log("  Block is working");
@@ -296,6 +285,7 @@ namespace AtmoHydroPower
             {
                 Logger.Log("  Block is not working");
                 m_SpinState = ThrusterSpinState.Off;
+
                 m_PowerSource.Enabled = false;
                 m_PowerSource.SetOutputByType(MyResourceDistributorComponent.ElectricityId, 0.0f);
                 m_PowerSource.SetMaxOutputByType(MyResourceDistributorComponent.ElectricityId, 0.0f);
@@ -306,6 +296,7 @@ namespace AtmoHydroPower
 
 
 
+            Logger.Log("  Done.", 3);
         }
 
         public override void MarkForClose()
@@ -328,7 +319,21 @@ namespace AtmoHydroPower
         {
             Logger.Log(m_Block.EntityId + " > UpdateBeforeSimulation..", 5);
 
-            MyResourceStateEnum state = MyResourceStateEnum.Ok;
+            if (m_ResDist == null)
+            {
+                m_ResDist = (MyResourceDistributorComponent)m_Grid.ResourceDistributor;
+                if (m_ResDist == null)
+                {
+                    Logger.Log("  Grid ResourceDistributor is still null");
+                }
+                else
+                {
+                    m_ResDist.AddSink(m_PowerSink);
+                    Logger.Log("  Added electricity sink");
+                }
+            }
+
+            MyResourceStateEnum state = MyResourceStateEnum.NoPower;
             if (m_ResDist != null)
             {
                 state = m_ResDist.ResourceStateByType(MyResourceDistributorComponent.ElectricityId, true, m_Grid as MyCubeGrid);
