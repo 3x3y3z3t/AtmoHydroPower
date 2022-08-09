@@ -490,8 +490,8 @@ namespace AtmoHydroPower
             powerOut = m_PowerSource.CurrentOutputByType(MyResourceDistributorComponent.ElectricityId);
             float powerPercent = powerOut / m_PowerOutput;
 
-            Logger.Log(string.Format("    Power Out: {0:0.##}/{1:0.##} ({2:0.##}%)", powerOut * 1000.0f, m_PowerOutput * 1000.0f, powerPercent * 100.0f), 3);
-            Logger.Log(string.Format("    Thrust {0:0.##}/{1:0.##} ({2:0.##}%)", m_Block.CurrentThrust, m_Block.MaxThrust, thrustPercent * 100.0f), 3);
+            Logger.Log(string.Format("    Power Out: {0:0.##}/{1:0.##} ({2:0.##}%)", powerOut * 1000.0f, m_PowerOutput * 1000.0f, powerPercent * 100.0f), 4);
+            Logger.Log(string.Format("    Thrust {0:0.##}/{1:0.##} ({2:0.##}%)", m_Block.CurrentThrust, m_Block.MaxThrust, thrustPercent * 100.0f), 4);
         }
     }
 }

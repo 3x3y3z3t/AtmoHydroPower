@@ -1,4 +1,4 @@
-This is the repository for "the script part" for Roshag & DEeM0NX's mod [Atmo Thrusters with Hydrogen (Standalone)](https://steamcommunity.com/sharedfiles/filedetails/?id=2807922557).\
+This is the repository for "the script part" for Roshag & DEeM0NX's mod [Atmo Thrusters with Hydrogen (Standalone)](https://steamcommunity.com/sharedfiles/filedetails/?id=2807922557).
 
 # AtmoHydroPower
 ![Thumbnail](thumb.png)
@@ -7,4 +7,4 @@ This is the repository for "the script part" for Roshag & DEeM0NX's mod [Atmo Th
 - What is balancing? (for now)
 
 # Version
-Script version v1.3.2
+Script version v1.3.3
